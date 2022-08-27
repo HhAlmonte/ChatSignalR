@@ -1,0 +1,68 @@
+﻿@model int
+
+<div class="row">
+
+	<h2 class="text-center g-4 text-white">@ChatSignalR.Controllers.ChatController.Rooms.GetValueOrDefault(Model)</h2>
+
+
+	<div class="row row-cols-1 row-cols-md-2 g-4">
+		<input type="text" class="form-control g-4" id="user" placeholder="Ingresa tu nombre de usuario">
+
+		<div class="col">
+			<div class="card text-center">
+				<div class="card-body">
+
+					<div class="input-group mb-3">
+						<input type="text" id="message" class="form-control" placeholder="Introducir mensaje" aria-label="Introducir mensaje" aria-describedby="basic-addon2">
+						<button class="input-group-text btn btn-primary g-4" id="btnSend">Enviar</button>
+					</div>
+					<div class="row">
+						<div class="col-6">
+							<div id="messages"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col">
+			<p class="text-white" id="notifications"></p>
+		</div>
+	</div>
+</div>
+<script src="~/lib/microsoft/signalr/dist/browser/signalr.min.js"></script>
+
+<script>
+	var connection = new signalR.HubConnectionBuilder().withUrl("/chat").build();
+
+	connection.start().then(() => {
+		connection.invoke("AddToGroup", "@Model")
+	}).catch((e)=> console.error(e))
+
+	document.getElementById("btnSend").addEventListener("click", (event) => {
+        
+		let room = "@Model";
+        let user = document.getElementById("user").value;
+        let message = document.getElementById("message").value;
+		
+		connection.invoke("SendMessage", room, user, message).catch((err) => console.error(err.toString()));
+		
+		document.getElementById("message").value = "";
+		document.getElementById("message").focus();
+
+		event.preventDefault();
+	})
+
+	connection.on("ReceiveMessage", (user, message) => {
+        var message = "<div ><b>" + user + ":</b> " + message + "</div>";
+        document.getElementById("messages").innerHTML =
+            message + document.getElementById("messages").innerHTML;
+	});
+
+	connection.on("ShowWho", (message) => {
+        var message = "<div ><b>" + message + "</b></div>";
+        document.getElementById("notifications").innerHTML =
+            message + document.getElementById("notifications").innerHTML;
+	});
+
+</script>
